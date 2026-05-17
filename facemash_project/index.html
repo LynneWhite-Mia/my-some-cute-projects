@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>our-facemash</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+    body {
+        margin:0;
+        padding:0;
+        overflow-x: hidden;
+    }
+    .top-box{
+        width:100%;
+        height:14vh;
+        background-color: rgb(165, 28, 33);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        color:white;
+        font-size:55px;
+        font-family:Georgia, "Times New Roman", serif;
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+    .mid-box{
+        position: relative;
+        border: 2px solid rgb(165,28,33);
+        width:100%;
+        height:73vh;
+        background-color:white;
+        display:flex;
+        flex-direction: column;
+        align-items:center;
+    }
+    .wrapper { 
+        display: flex;
+        justify-content: center; 
+        align-items: center;  
+        gap: 30px; 
+        margin-top: 40px;
+    }
+    .firstword, .secondword,.threeword {
+        text-align: center;
+        font-family: Georgia, "Times New Roman", serif;
+        letter-spacing: 1.5px;
+    }
+    .firstword { font-size: 20px; margin-top: 40px;}
+    .secondword { font-size: 30px;margin-top: 20px;font-weight: bold; }
+    .threeword {font-size: 12px;margin-top:100px;color:rgb(151, 194, 231)}
+
+    .bottom-left{
+        position: absolute;
+        bottom:20px;
+        left:5px;
+        font-size:12px;
+        letter-spacing:1.2px;
+    }
+    .card img {
+        width: 100%;  
+        height: 100%;
+        object-fit: cover; 
+    }
+    .card {
+        cursor: pointer;
+        width: 250px;
+        height: 350px;
+        border: 2px solid #888; 
+        background-color: #eee;
+        overflow: hidden; 
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+        transform: scale(1.05);
+        border-color: rgb(165, 28, 33);
+    }
+    .card:active {
+        transform: scale(0.98);
+    }
+    .or-text {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+        .top-box { font-size: 32px; height: 10vh; }
+        .mid-box { height: auto; min-height: 90vh; border: none; padding-bottom: 30px; }
+        .wrapper { flex-direction: column; gap: 15px; margin-top: 20px; }
+        .card { width: 80vw; max-width: 300px; height: 350px; }
+        .firstword, .secondword { padding: 0 20px; }
+        .firstword { font-size: 16px; margin-top: 20px; }
+        .secondword { font-size: 22px; }
+        .bottom-left {
+            position: relative; bottom: auto; left: auto;
+            text-align: center; padding: 15px; margin-top: 20px;
+            color: #555; line-height: 1.5;
+        }
+        .threeword { margin-top: 30px; padding: 0 10px; line-height: 1.8; }
+    }
+    </style>
+</head>
+<body>
+    <div class="top-box">FACEMASH</div>
+    <div class="mid-box">
+        <div class="firstword">
+            Were we let in for our looks? No. Will we be judged on them? Yes.
+        </div>
+        <div class="secondword">
+            Who's Hotter? Click to Choose.
+        </div>
+        
+        <div class="wrapper" id="photo-wrapper" style="display: none;">
+            <div class="card">
+                <img id="img-left" src="" alt="照片"> 
+            </div>
+            <div class="or-text">OR</div>
+            <div class="card">
+                <img id="img-right" src="" alt="照片">
+            </div>
+        </div>
+
+        <div class="threeword">
+            ABOUT | BLOG | TERMS | CONTACT | (C)2003 FOEHN | MATTER PHOTO | RANDOM
+        </div>
+        <div class="bottom-left">
+            this webpage was completed by Lynne alone, but I want to thank Jesse. It wouldn't exist without him.
+        </div>
+    </div>
+
+    <script>
+        const _supabaseUrl = 'https://zvprcucodurgjpayesym.supabase.co'; 
+        const _supabaseKey = 'sb_publishable_C1Wl4pSQ6Skc0vFCi0Dd1g_UZ1GoMpC'; 
+
+        const { createClient } = supabase;
+        const db = createClient(_supabaseUrl, _supabaseKey);
+
+        let photos = [];
+        let currentLeftPerson = null; 
+        let currentRightPerson = null;
+
+        const leftImage = document.getElementById('img-left');
+        const rightImage = document.getElementById('img-right');
+
+        async function loadPhotosFromCloud() {
+            const { data, error } = await db.from('photos').select('*');
+            if (error) {
+                alert("读取数据库失败，请检查 URL 和 Key 是否填对！");
+                console.error(error);
+                return;
+            }
+            
+            photos = data.map(item => ({
+                name: item.name,
+                score: item.score,
+                src:'image/' + item.name + '.png'
+            }));
+            document.getElementById('photo-wrapper').style.display = 'flex';
+
+            changePhotos();
+        }
+
+        function changePhotos(){
+            let index1 = Math.floor(Math.random() * photos.length);
+            let index2 = Math.floor(Math.random() * photos.length);
+
+            while(index1 === index2) {
+                index2 = Math.floor(Math.random() * photos.length);
+            }
+            
+            currentLeftPerson = photos[index1];
+            currentRightPerson = photos[index2];
+
+            leftImage.src = currentLeftPerson.src;
+            rightImage.src = currentRightPerson.src;
+        }
+        async function updateScoreToCloud(name, newScore) {
+            await db.from('photos').update({ score: newScore }).eq('name', name);
+}
+
+        function handleVote(winner, loser){
+            let Ra = winner.score;
+            let Rb = loser.score;
+            let K = 32;
+            
+            let Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
+            let Eb = 1 / (1 + Math.pow(10, (Ra - Rb) / 400));
+            
+            winner.score = Math.round(Ra + K * (1 - Ea));
+            loser.score  = Math.round(Rb + K * (0 - Eb));
+
+            updateScoreToCloud(winner.name, winner.score);
+            updateScoreToCloud(loser.name, loser.score);
+
+            changePhotos();
+        }
+
+        leftImage.addEventListener('click', function(){
+            handleVote(currentLeftPerson, currentRightPerson);
+        });
+
+        rightImage.addEventListener('click', function(){
+            handleVote(currentRightPerson, currentLeftPerson);
+        });
+
+        document.addEventListener('keydown', function(event){
+            if(event.key === 'r' || event.key === 'R'){
+                let sortedPhotos = [...photos].sort((a, b) => b.score - a.score);
+                console.clear();
+                console.table(sortedPhotos);
+            }
+        });
+
+        loadPhotosFromCloud();
+    </script>
+</body>
+</html>
